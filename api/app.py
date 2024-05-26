@@ -76,11 +76,14 @@ config_type = os.getenv('EDITION', default='SELF_HOSTED')  # ce edition first
 
 
 def create_app() -> Flask:
+    # 定义flask app对象
     app = DifyApp(__name__)
+    # 将配置加载到上下文
     app.config.from_object(Config())
 
     app.secret_key = app.config['SECRET_KEY']
 
+    # 定义日志对象
     log_handlers = None
     log_file = app.config.get('LOG_FILE')
     if log_file:
@@ -95,6 +98,7 @@ def create_app() -> Flask:
             logging.StreamHandler(sys.stdout)
         ]
 
+    # 设置日志配置
     logging.basicConfig(
         level=app.config.get('LOG_LEVEL'),
         format=app.config.get('LOG_FORMAT'),
@@ -102,8 +106,11 @@ def create_app() -> Flask:
         handlers=log_handlers
     )
 
+    # 初始化扩展
     initialize_extensions(app)
+    # 注册蓝图
     register_blueprints(app)
+    # 注册自定义命令行
     register_commands(app)
 
     return app
@@ -112,11 +119,17 @@ def create_app() -> Flask:
 def initialize_extensions(app):
     # Since the application instance is now created, pass it to each Flask
     # extension instance to bind it to the Flask application instance (app)
+
+    # http内容压缩
     ext_compress.init_app(app)
     ext_code_based_extension.init()
+    # 数据库
     ext_database.init_app(app)
+    # 数据迁移
     ext_migrate.init(app, db)
+    # 初始化redis对象
     ext_redis.init_app(app)
+    # 云存储
     ext_storage.init_app(app)
     ext_celery.init_app(app)
     ext_login.init_app(app)
@@ -206,7 +219,7 @@ def register_blueprints(app):
     app.register_blueprint(inner_api_bp)
 
 
-# create app
+# 创建应用
 app = create_app()
 celery = app.extensions["celery"]
 
